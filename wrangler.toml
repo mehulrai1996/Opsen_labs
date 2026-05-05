@@ -1,0 +1,10 @@
+name = "opsen-labs"
+compatibility_date = "2026-05-05"
+
+pages_build_output_dir = "."
+
+[env.production]
+name = "opsen-labs"
+
+[env.preview]
+name = "opsen-labs-preview"
