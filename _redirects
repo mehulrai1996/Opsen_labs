@@ -1,0 +1,4 @@
+# Opsen Labs — Cloudflare Pages Redirects
+# All pages are static HTML — no redirects needed by default.
+# Add custom redirects below as needed, e.g.:
+# /services  /mvp-sprint.html  302
