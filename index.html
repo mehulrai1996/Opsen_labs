@@ -368,13 +368,18 @@
   <div class="modal">
     <button class="modal-close" onclick="closeModal('estimate')"><svg width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.5" viewBox="0 0 16 16"><line x1="2" y1="2" x2="14" y2="14"/><line x1="14" y1="2" x2="2" y2="14"/></svg></button>
     <h2>Request Estimate</h2>
-    <p class="sub">We'll scope your project and respond with a clear proposal within 48 hours — no obligation.</p>
-    <div class="form-field"><label>Full Name</label><input type="text" placeholder="Your name" /></div>
-    <div class="form-field"><label>Company</label><input type="text" placeholder="Your company" /></div>
-    <div class="form-field"><label>Email</label><input type="email" placeholder="you@company.com" /></div>
-    <div class="form-field"><label>Service</label><select><option value="">Select a service</option><option>MVP Sprint</option><option>MVP Recovery</option><option>Product Optimization</option></select></div>
-    <div class="form-field"><label>Tell us what you're building</label><textarea placeholder="The more context, the better our estimate."></textarea></div>
-    <button class="form-submit">Submit Request</button>
+    <p class="sub">Tell us what you're building. We'll respond with a clear scope, honest timeline, and fixed cost — within 48 hours.</p>
+    <input type="hidden" name="access_key" value="d9fceb14-6ed1-4165-a295-7eae4cdfe24e" />
+    <input type="hidden" name="subject" value="New Estimate Request — Opsen Labs" />
+    <input type="hidden" name="from_name" value="Opsen Labs Website" />
+    <input type="hidden" name="redirect" value="false" />
+    <div class="form-field"><label>Full Name</label><input type="text" name="name" placeholder="Your name" /></div>
+    <div class="form-field"><label>Company</label><input type="text" name="company" placeholder="Your company" /></div>
+    <div class="form-field"><label>Email</label><input type="email" name="email" placeholder="you@company.com" /></div>
+    <div class="form-field"><label>Service</label><select name="service"><option value="">Select a service</option><option>MVP Sprint</option><option>MVP Recovery</option><option>Product Optimization</option></select></div>
+    <div class="form-field"><label>Tell us what you're building</label><textarea name="message" placeholder="The more context, the better our estimate."></textarea></div>
+    <button class="form-submit" id="btn-estimate" onclick="submitForm(event, 'estimate')">Submit Request</button>
+    <p id="msg-estimate" style="margin-top:16px;font-size:13px;color:var(--muted);display:none;text-align:center;"></p>
   </div>
 </div>
 <div class="modal-overlay" id="modal-email">
@@ -382,11 +387,16 @@
     <button class="modal-close" onclick="closeModal('email')"><svg width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.5" viewBox="0 0 16 16"><line x1="2" y1="2" x2="14" y2="14"/><line x1="14" y1="2" x2="2" y2="14"/></svg></button>
     <h2>Say Hello</h2>
     <p class="sub">We read every message personally and respond within one business day.</p>
-    <div class="form-field"><label>Your Name</label><input type="text" placeholder="Your name" /></div>
-    <div class="form-field"><label>Email</label><input type="email" placeholder="you@company.com" /></div>
-    <div class="form-field"><label>Subject</label><input type="text" placeholder="What's on your mind?" /></div>
-    <div class="form-field"><label>Message</label><textarea style="height:110px" placeholder="We're all ears."></textarea></div>
-    <button class="form-submit">Send Message</button>
+    <input type="hidden" name="access_key" value="d9fceb14-6ed1-4165-a295-7eae4cdfe24e" />
+    <input type="hidden" name="subject" value="New Message — Opsen Labs" />
+    <input type="hidden" name="from_name" value="Opsen Labs Website" />
+    <input type="hidden" name="redirect" value="false" />
+    <div class="form-field"><label>Your Name</label><input type="text" name="name" placeholder="Your name" /></div>
+    <div class="form-field"><label>Email</label><input type="email" name="email" placeholder="you@company.com" /></div>
+    <div class="form-field"><label>Subject</label><input type="text" name="subject_line" placeholder="What's on your mind?" /></div>
+    <div class="form-field"><label>Message</label><textarea name="message" style="height:110px" placeholder="We're all ears."></textarea></div>
+    <button class="form-submit" id="btn-email" onclick="submitForm(event, 'email')">Send Message</button>
+    <p id="msg-email" style="margin-top:16px;font-size:13px;color:var(--muted);display:none;text-align:center;"></p>
   </div>
 </div>
 
@@ -480,6 +490,62 @@
     a.addEventListener('click', e => { const t = document.querySelector(a.getAttribute('href')); if(t) { e.preventDefault(); t.scrollIntoView({behavior:'smooth'}); } });
   });
 
+</script>
+<script>
+async function submitForm(e, formId) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-' + formId);
+  const msg = document.getElementById('msg-' + formId);
+  const modal = document.getElementById('modal-' + formId);
+
+  // Gather hidden config fields
+  const formData = new FormData();
+  modal.querySelectorAll('input[type=hidden]').forEach(i => {
+    formData.append(i.name, i.value);
+  });
+
+  // Gather visible user inputs
+  modal.querySelectorAll('input:not([type=hidden]), textarea, select').forEach(input => {
+    if (input.name) formData.append(input.name, input.value);
+  });
+
+  // Basic validation
+  const emailField = modal.querySelector('input[type=email]');
+  if (!emailField || !emailField.value.includes('@')) {
+    msg.style.display = 'block';
+    msg.style.color = '#c0392b';
+    msg.textContent = 'Please enter a valid email address.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  msg.style.display = 'none';
+
+  try {
+    const res = await fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      btn.textContent = 'Sent ✓';
+      msg.style.display = 'block';
+      msg.style.color = 'var(--gold)';
+      msg.textContent = "Thank you — we\'ll be in touch within one business day.";
+      modal.querySelectorAll('input:not([type=hidden]), textarea, select').forEach(i => i.value = '');
+    } else {
+      throw new Error(data.message || 'Submission failed');
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = formId === 'estimate' ? 'Submit Request' : 'Send Message';
+    msg.style.display = 'block';
+    msg.style.color = '#c0392b';
+    msg.textContent = 'Something went wrong. Please email us at mehul@opsenlabs.com';
+  }
+}
 </script>
 </body>
 </html>
